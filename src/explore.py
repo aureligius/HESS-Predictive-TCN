@@ -4,9 +4,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from config import USE_SYNTHETIC    
 
-# ============================================================
 # KONFIGURASI
-# ============================================================
 BASE_DIR = Path(__file__).resolve().parent
 CSV_PATH = BASE_DIR / "sumber_energi_15.csv"
 HORIZON = 1
@@ -18,9 +16,7 @@ else:
 if not CSV_PATH.exists():
     raise FileNotFoundError(f"CSV file not found: {CSV_PATH}")
 
-# ============================================================
-# STEP 1 — LOAD DAN RESHAPE (long → wide)
-# ============================================================
+# LOAD DAN RESHAPE (long → wide)
 df_raw = pd.read_csv(CSV_PATH)
 
 df_raw["DateTime"] = df_raw["MTU (CET/CEST)"].str.split(" - ").str[0]
@@ -42,9 +38,7 @@ for col in df_wide.columns:
 df_wide = df_wide.ffill().fillna(0)
 df_wide = df_wide.sort_values("DateTime").reset_index(drop=True)
 
-# ============================================================
-# STEP 2 — MAPPING KE 5 SUMBER HESS + BERSIHKAN ZERO
-# ============================================================
+# MAPPING KE 5 SUMBER HESS + BERSIHKAN ZERO
 df = pd.DataFrame()
 df["DateTime"] = df_wide["DateTime"]
 df["wind"] = df_wide["Wind Onshore"] + df_wide["Wind Offshore"]
@@ -61,9 +55,7 @@ all_zero = (df[FEATURE_COLS] == 0).all(axis=1)
 df = df[~all_zero].copy().reset_index(drop=True)
 print(f"[OK] Setelah buang zero: {len(df)} baris (per-15-menit)")
 
-# ============================================================
-# STEP 3 — SYNTHETIC PER-MINUTE (BROWNIAN BRIDGE)
-# ============================================================
+# SYNTHETIC PER-MINUTE (BROWNIAN BRIDGE)
 def generate_synthetic_per_minute(df_15min, feature_cols, sigma_scale=0.3, seed=42):
     np.random.seed(seed)
     STEPS = 15
@@ -127,9 +119,7 @@ else:
 print(f"[OK] Dataset yang dipakai untuk training: {resolution_label}")
 print(f"     Shape: {df_work.shape}")
 
-# ============================================================
-# STEP 4 — TARGET DELTA
-# ============================================================
+# TARGET DELTA
 TARGET_COL = "load_output"
 ALL_COLS = FEATURE_COLS + [TARGET_COL]
 
@@ -139,9 +129,7 @@ df_work["load_output"] = df_work["load_output"].diff().shift(-1)
 df_work = df_work.iloc[:-1].reset_index(drop=True)
 print(f"[OK] Delta target dibuat. Shape: {df_work.shape}")
 
-# ============================================================
-# STEP 5 — SPLIT 70/15/15
-# ============================================================
+# SPLIT 70/15/15
 n_rows = len(df_work)
 train_end = int(n_rows * 0.70)
 val_end = int(n_rows * 0.85)
@@ -151,9 +139,7 @@ df_val_raw = df_work.iloc[train_end:val_end]
 df_test_raw = df_work.iloc[val_end:]
 print(f"[OK] Split: train={len(df_train_raw)}, val={len(df_val_raw)}, test={len(df_test_raw)}")
 
-# ============================================================
-# STEP 6 — NORMALISASI (scaler HANYA dari train)
-# ============================================================
+# NORMALISASI (scaler HANYA dari train)
 train_min = df_train_raw[ALL_COLS].min().values
 train_max = df_train_raw[ALL_COLS].max().values
 np.save(BASE_DIR / "scaler_params.npy", np.stack([train_min, train_max]))
@@ -165,9 +151,7 @@ train_norm = normalize(df_train_raw[ALL_COLS].values, train_min, train_max)
 val_norm = normalize(df_val_raw[ALL_COLS].values, train_min, train_max)
 test_norm = normalize(df_test_raw[ALL_COLS].values, train_min, train_max)
 
-# ============================================================
-# STEP 7 — WINDOWING
-# ============================================================
+# WINDOWING
 def make_windows(data_array, level_array, feature_count=5):
     X, y, y_level_last = [], [], []
     for i in range(len(data_array) - WINDOW_SIZE - HORIZON + 1):
@@ -184,9 +168,7 @@ X_train, y_train, _ = make_windows(train_norm, df_train_raw["load_output_level"]
 X_val, y_val, _ = make_windows(val_norm, df_val_raw["load_output_level"].values)
 X_test, y_test, y_test_level_last = make_windows(test_norm, df_test_raw["load_output_level"].values)
 
-# ============================================================
-# STEP 8 — SIMPAN
-# ============================================================
+# SIMPAN
 np.save(BASE_DIR / "X_train.npy", X_train)
 np.save(BASE_DIR / "y_train.npy", y_train)
 np.save(BASE_DIR / "X_val.npy", X_val)

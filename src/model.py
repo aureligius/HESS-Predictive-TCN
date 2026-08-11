@@ -1,4 +1,4 @@
-# model_def.py — satu-satunya tempat definisi arsitektur
+# Defining the TCN model architecture 
 import torch
 import torch.nn as nn
 
