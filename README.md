@@ -106,7 +106,6 @@ DELTACUP/
 │   └── PROJECT_SUMMARY.md          # Full methodology + trial-and-error log for review
 │  
 │
-├── requirements.txt
 ├── .gitignore
 └── README.md
 ```
