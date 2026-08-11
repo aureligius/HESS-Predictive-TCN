@@ -78,11 +78,6 @@ plt.savefig(BASE_DIR / "confusion_matrix.png", dpi=150)
 plt.close()
 
 # GRAFIK LOSS CURVE (train vs val)
-# ============================================================
-# Perlu dijalankan SETELAH training, pastikan train_losses dan val_losses tersimpan
-# Tambahkan di akhir train.py:
-# np.save("loss_history.npy", np.array([train_losses, val_losses]))
-
 try:
     history = np.load(BASE_DIR / "loss_history.npy")
     train_losses_arr = history[0]
