@@ -6,6 +6,11 @@ from pathlib import Path
 from model import HESS_TCN_v2
 
 BASE_DIR = Path(__file__).resolve().parent
+DATA_DIR = BASE_DIR.parent / "data"
+OUTPUT_DIR = BASE_DIR.parent / "output"
+OUTPUT_DIR.mkdir(exist_ok=True)
+FIGURES_DIR = OUTPUT_DIR / "figures"
+FIGURES_DIR.mkdir(exist_ok=True)  
 
 torch.manual_seed(42) # biar random number yang di generate itu punya pola yang sama
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -19,12 +24,12 @@ class WindowDataset(Dataset):
 
 BATCH_SIZE = 128 # 1 epoch = 128 set
 train_loader = DataLoader(
-    WindowDataset(BASE_DIR / "X_train.npy", BASE_DIR / "y_train.npy"),
+    WindowDataset(OUTPUT_DIR / "X_train.npy", OUTPUT_DIR / "y_train.npy"),
     batch_size=BATCH_SIZE,
     shuffle=True,
 )  # acak urutan tiap epoch, biar model gak menghafal urutan
 val_loader = DataLoader(
-    WindowDataset(BASE_DIR / "X_val.npy", BASE_DIR / "y_val.npy"),
+    WindowDataset(OUTPUT_DIR / "X_val.npy", OUTPUT_DIR / "y_val.npy"),
     batch_size=BATCH_SIZE,
     shuffle=False,
 )  # untuk cek performa, jadi tidak perlu shuffle
@@ -68,7 +73,7 @@ for epoch in range(1, EPOCHS + 1):
     if val_loss < best_val_loss:
         best_val_loss = val_loss
         patience_counter = 0
-        torch.save(model.state_dict(), BASE_DIR / "best_model.pth")
+        torch.save(model.state_dict(), OUTPUT_DIR / "best_model.pth")
     else:
         patience_counter += 1
         if patience_counter >= PATIENCE:
@@ -79,5 +84,5 @@ for epoch in range(1, EPOCHS + 1):
     val_losses.append(val_loss)
 
 
-np.save(BASE_DIR / "loss_history.npy", np.array([train_losses, val_losses]))
+np.save(OUTPUT_DIR / "loss_history.npy", np.array([train_losses, val_losses]))
 print(f"[SUCCESS] Training Selesai! Best Val Loss: {best_val_loss:.6f}")

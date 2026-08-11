@@ -6,7 +6,13 @@ from config import USE_SYNTHETIC
 
 # KONFIGURASI
 BASE_DIR = Path(__file__).resolve().parent
-CSV_PATH = BASE_DIR / "sumber_energi_15.csv"
+DATA_DIR = BASE_DIR.parent / "data"
+OUTPUT_DIR = BASE_DIR.parent / "output"
+OUTPUT_DIR.mkdir(exist_ok=True)
+FIGURES_DIR = OUTPUT_DIR / "figures"
+FIGURES_DIR.mkdir(exist_ok=True)  
+
+CSV_PATH = DATA_DIR / "sumber_energi_15.csv"
 HORIZON = 1
 if USE_SYNTHETIC: 
     WINDOW_SIZE = 240
@@ -108,7 +114,7 @@ if USE_SYNTHETIC:
     ax.legend()
     ax.grid(alpha=0.3)
     plt.tight_layout()
-    plt.savefig(BASE_DIR / "synthetic_vs_real.png", dpi=150)
+    plt.savefig(FIGURES_DIR / "synthetic_vs_real.png", dpi=150)
     plt.close()
     print("[OK] Plot tersimpan → synthetic_vs_real.png")
     resolution_label = "per-menit sintetis"
@@ -142,7 +148,7 @@ print(f"[OK] Split: train={len(df_train_raw)}, val={len(df_val_raw)}, test={len(
 # NORMALISASI (scaler HANYA dari train)
 train_min = df_train_raw[ALL_COLS].min().values
 train_max = df_train_raw[ALL_COLS].max().values
-np.save(BASE_DIR / "scaler_params.npy", np.stack([train_min, train_max]))
+np.save(OUTPUT_DIR / "scaler_params.npy", np.stack([train_min, train_max]))
 
 def normalize(arr, mn, mx):
     return (arr - mn) / (mx - mn + 1e-8)
@@ -169,13 +175,13 @@ X_val, y_val, _ = make_windows(val_norm, df_val_raw["load_output_level"].values)
 X_test, y_test, y_test_level_last = make_windows(test_norm, df_test_raw["load_output_level"].values)
 
 # SIMPAN
-np.save(BASE_DIR / "X_train.npy", X_train)
-np.save(BASE_DIR / "y_train.npy", y_train)
-np.save(BASE_DIR / "X_val.npy", X_val)
-np.save(BASE_DIR / "y_val.npy", y_val)
-np.save(BASE_DIR / "X_test.npy", X_test)
-np.save(BASE_DIR / "y_test.npy", y_test)
-np.save(BASE_DIR / "y_test_level_last.npy", y_test_level_last)
+np.save(OUTPUT_DIR / "X_train.npy", X_train)
+np.save(OUTPUT_DIR / "y_train.npy", y_train)
+np.save(OUTPUT_DIR / "X_val.npy", X_val)
+np.save(OUTPUT_DIR / "y_val.npy", y_val)
+np.save(OUTPUT_DIR / "X_test.npy", X_test)
+np.save(OUTPUT_DIR / "y_test.npy", y_test)
+np.save(OUTPUT_DIR / "y_test_level_last.npy", y_test_level_last)
 
 print(f"\n[OK] Windows: X_train={X_train.shape}, X_val={X_val.shape}, X_test={X_test.shape}")
 print(f"[SUCCESS] Pipeline selesai! Dataset: {resolution_label}")

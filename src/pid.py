@@ -5,6 +5,12 @@ from config import USE_SYNTHETIC
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent
+DATA_DIR = BASE_DIR.parent / "data"
+OUTPUT_DIR = BASE_DIR.parent / "output"
+OUTPUT_DIR.mkdir(exist_ok=True)
+FIGURES_DIR = OUTPUT_DIR / "figures"
+FIGURES_DIR.mkdir(exist_ok=True)  
+
 results = build_results(plot=False)
 level_actual_next = results["level_actual_next"]
 level_pred_recon = results["level_pred_recon"]
@@ -57,7 +63,7 @@ plt.title(f"Fluctuation Damping Simulation: AI+PID vs No Control (reduction {red
 plt.legend()
 plt.grid(alpha=0.3)
 plt.tight_layout()
-plt.savefig(BASE_DIR / "fig_pid_simulation.png", dpi=150)
+plt.savefig(FIGURES_DIR / "fig_pid_simulation.png", dpi=150)
 plt.show()
 plt.close()
 print("[OK] Grafik tersimpan -> fig_pid_simulation.png")

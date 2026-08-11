@@ -10,10 +10,15 @@ from model import HESS_TCN_v2
 import matplotlib.colors as mcolors
 
 BASE_DIR = Path(__file__).resolve().parent
+DATA_DIR = BASE_DIR.parent / "data"
+OUTPUT_DIR = BASE_DIR.parent / "output"
+OUTPUT_DIR.mkdir(exist_ok=True)
+FIGURES_DIR = OUTPUT_DIR / "figures"
+FIGURES_DIR.mkdir(exist_ok=True)  
 
 # Load data
-y_true_norm = np.load(BASE_DIR / "y_test.npy").flatten()
-scaler = np.load(BASE_DIR / "scaler_params.npy")
+y_true_norm = np.load(OUTPUT_DIR / "y_test.npy").flatten()
+scaler = np.load(OUTPUT_DIR / "scaler_params.npy")
 target_min, target_max = scaler[0, -1], scaler[1, -1]
 
 # Denormalisasi
@@ -22,9 +27,9 @@ def denorm(arr, mn, mx): return arr * (mx - mn) + mn
 # Prediksi ulang dari model
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = HESS_TCN_v2(num_inputs=5).to(device)
-model.load_state_dict(torch.load(BASE_DIR / "best_model.pth", map_location=device))
+model.load_state_dict(torch.load(OUTPUT_DIR / "best_model.pth", map_location=device))
 model.eval()
-X_test = np.load(BASE_DIR / "X_test.npy")
+X_test = np.load(OUTPUT_DIR / "X_test.npy")
 with torch.no_grad():
     preds_norm = model(torch.from_numpy(X_test).to(device)).cpu().numpy().flatten()
 
@@ -74,12 +79,12 @@ ax.set_ylabel("ACTUAL", fontsize=12)
 ax.set_title("Confusion Matrix — Predicting Delta Fluctuations\n"
              "(Blue = True, White = False)", fontsize=11)
 plt.tight_layout()
-plt.savefig(BASE_DIR / "confusion_matrix.png", dpi=150)
+plt.savefig(FIGURES_DIR / "confusion_matrix.png", dpi=150)
 plt.close()
 
 # GRAFIK LOSS CURVE (train vs val)
 try:
-    history = np.load(BASE_DIR / "loss_history.npy")
+    history = np.load(OUTPUT_DIR / "loss_history.npy")
     train_losses_arr = history[0]
     val_losses_arr   = history[1]
 
@@ -92,7 +97,7 @@ try:
     ax.legend()
     ax.grid(alpha=0.3)
     plt.tight_layout()
-    plt.savefig(BASE_DIR / "fig_loss_curve.png", dpi=150)
+    plt.savefig(FIGURES_DIR / "fig_loss_curve.png", dpi=150)
     plt.show()
     plt.close()
     print("[OK] Loss curve tersimpan")

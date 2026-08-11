@@ -7,19 +7,26 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from model import HESS_TCN_v2   
 
 BASE_DIR = Path(__file__).resolve().parent
+BASE_DIR = Path(__file__).resolve().parent
+DATA_DIR = BASE_DIR.parent / "data"
+OUTPUT_DIR = BASE_DIR.parent / "output"
+OUTPUT_DIR.mkdir(exist_ok=True)
+FIGURES_DIR = OUTPUT_DIR / "figures"
+FIGURES_DIR.mkdir(exist_ok=True)  
+
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def build_results(plot=True):
     model = HESS_TCN_v2(num_inputs=5).to(device)
-    model.load_state_dict(torch.load(BASE_DIR / "best_model.pth", map_location=device))
+    model.load_state_dict(torch.load(OUTPUT_DIR / "best_model.pth", map_location=device))
     model.eval()
 
     # 1. LOAD DATA TEST, SCALER, DAN LEVEL TERAKHIR (untuk rekonstruksi)
-    X_test = np.load(BASE_DIR / "X_test.npy")
-    y_test = np.load(BASE_DIR / "y_test.npy")
-    y_test_level_last = np.load(BASE_DIR / "y_test_level_last.npy")
-    scaler = np.load(BASE_DIR / "scaler_params.npy")
+    X_test = np.load(OUTPUT_DIR / "X_test.npy")
+    y_test = np.load(OUTPUT_DIR / "y_test.npy")
+    y_test_level_last = np.load(OUTPUT_DIR / "y_test_level_last.npy")
+    scaler = np.load(OUTPUT_DIR / "scaler_params.npy")
     target_min, target_max = scaler[0, -1], scaler[1, -1]
 
     # 2. PREDIKSI (di GPU, lalu pindah balik ke CPU)
@@ -68,10 +75,10 @@ def build_results(plot=True):
         plt.legend()
         plt.grid(alpha=0.3)
         plt.tight_layout()
-        plt.savefig(BASE_DIR / "fig_pred_vs_actual.png", dpi=150)
+        plt.savefig(FIGURES_DIR / "fig_pred_vs_actual.png", dpi=150)
         plt.show()
         plt.close()
-        print(f"[OK] Grafik tersimpan -> {BASE_DIR / 'fig_pred_vs_actual.png'}")
+        print(f"[OK] Grafik tersimpan -> {FIGURES_DIR / 'fig_pred_vs_actual.png'}")
 
     # Tambahkan di show.py dalam build_results(), setelah plot prediksi vs aktual
     if plot:
@@ -86,7 +93,7 @@ def build_results(plot=True):
         ax.set_title(f"Scatter: Prediksi vs Aktual Delta\nR²={r2_delta:.4f}")
         ax.legend(); ax.grid(alpha=0.3)
         plt.tight_layout()
-        plt.savefig(BASE_DIR / "fig_scatter_delta.png", dpi=150)
+        plt.savefig(FIGURES_DIR / "fig_scatter_delta.png", dpi=150)
         plt.close()
 
     return {
