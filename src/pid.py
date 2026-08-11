@@ -2,7 +2,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from show import build_results
 from config import USE_SYNTHETIC
+from pathlib import Path
 
+BASE_DIR = Path(__file__).resolve().parent
 results = build_results(plot=False)
 level_actual_next = results["level_actual_next"]
 level_pred_recon = results["level_pred_recon"]
@@ -55,7 +57,7 @@ plt.title(f"Fluctuation Damping Simulation: AI+PID vs No Control (reduction {red
 plt.legend()
 plt.grid(alpha=0.3)
 plt.tight_layout()
-plt.savefig("fig_pid_simulation.png", dpi=150)
+plt.savefig(BASE_DIR / "fig_pid_simulation.png", dpi=150)
 plt.show()
 plt.close()
 print("[OK] Grafik tersimpan -> fig_pid_simulation.png")

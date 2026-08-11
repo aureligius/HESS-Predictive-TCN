@@ -31,10 +31,8 @@ with torch.no_grad():
 delta_actual = denorm(y_true_norm, target_min, target_max)
 delta_pred   = denorm(preds_norm,  target_min, target_max)
 
-# ============================================================
 # KONVERSI KE KLASIFIKASI ARAH
 # 1 = naik (delta > 0), 0 = turun (delta <= 0)
-# ============================================================
 # Filter: buang kasus delta sangat kecil (< 50 MW) — terlalu noise untuk dinilai arahnya
 THRESHOLD = 50  # MW
 mask = np.abs(delta_actual) > THRESHOLD
@@ -79,7 +77,6 @@ plt.tight_layout()
 plt.savefig(BASE_DIR / "confusion_matrix.png", dpi=150)
 plt.close()
 
-# ============================================================
 # GRAFIK LOSS CURVE (train vs val)
 # ============================================================
 # Perlu dijalankan SETELAH training, pastikan train_losses dan val_losses tersimpan
@@ -104,5 +101,5 @@ try:
     plt.show()
     plt.close()
     print("[OK] Loss curve tersimpan")
-except:
-    print("[INFO] loss_history.npy tidak ada — tambahkan di train.py dulu")
+except FileNotFoundError:
+    print("[INFO] loss_history.npy tidak ada")
