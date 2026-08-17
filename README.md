@@ -327,10 +327,6 @@ A condensed summary — full details in [`docs/PROJECT_SUMMARY.md`](docs/PROJECT
 
 ---
 
-## License
-
-*(Add your license here, e.g., MIT, or leave as competition-internal if not intended for public reuse.)*
-
 ## Acknowledgments
 
 Built for the DELTACUP competition. See `docs/PROJECT_SUMMARY.md` for the complete technical writeup intended for external/AI review.
