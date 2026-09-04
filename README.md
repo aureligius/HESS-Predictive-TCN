@@ -2,8 +2,6 @@
 
 AI-driven predictive control system for a Hybrid Energy Storage System (HESS) prototype, combining a Temporal Convolutional Network (TCN) for short-horizon renewable power forecasting with a Predictive PID controller for flywheel-based fluctuation smoothing.
 
-Built for **DELTACUP**.
-
 ---
 
 ## Table of Contents
