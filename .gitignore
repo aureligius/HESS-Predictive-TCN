@@ -8,3 +8,6 @@ __pycache__/
 # OS Files
 .DS_Store
 Thumbs.db
+
+src/.agents/
+src/.claude/
