@@ -57,7 +57,7 @@ No physical prototype exists yet. This repository implements and validates the A
 
 | Metric | Value |
 |---|---|
-| R² (delta — true model skill) | **0.51** |
+| R² (delta/true model skill) | **0.51** |
 | R² (level, reconstructed) | 0.9953 |
 | MAE (delta) | 227 MW |
 | Directional Accuracy (\|Δ\|>50MW) | **85.6%** |
@@ -261,9 +261,9 @@ Five architectures were evaluated on identical data, splits, and evaluation pipe
 
 **Why TCN was selected despite Linear Regression's higher raw R²:**
 
-1. **Architectural** — causal dilated convolutions guarantee zero future-information leakage; exponential receptive field growth with only linear parameter growth.
-2. **Computational** — fully parallelizable across the time axis (unlike RNN/LSTM/GRU sequential dependency), well-suited to embedded inference and INT8 quantization. Linear Regression's 240-weight flat structure has no compact embedded-runtime representation.
-3. **Empirical** — TCN achieves the best PID-reduction outcome, the metric most directly tied to system utility, despite a marginally lower delta-R² than Linear Regression.
+1. **Architectural**: causal dilated convolutions guarantee zero future-information leakage; exponential receptive field growth with only linear parameter growth.
+2. **Computational**: fully parallelizable across the time axis (unlike RNN/LSTM/GRU sequential dependency), well-suited to embedded inference and INT8 quantization. Linear Regression's 240-weight flat structure has no compact embedded-runtime representation.
+3. **Empirical**: TCN achieves the best PID-reduction outcome, the metric most directly tied to system utility, despite a marginally lower delta-R² than Linear Regression.
 
 An **ensemble of TCN + Linear Regression** (simple averaging) was also evaluated: R² improved to 0.58, but PID reduction (66.9%) did not exceed TCN standalone. The ensemble was rejected in favor of the simpler, single-model TCN pipeline.
 
@@ -289,28 +289,28 @@ A condensed summary — full details in [`docs/PROJECT_SUMMARY.md`](docs/PROJECT
 
 | # | Trial | Outcome |
 |---|---|---|
-| 1 | Global min/max scaler fit on entire dataset | **Bug** — caused data leakage; fixed to fit on train split only |
-| 2 | Global Average Pooling before FC layers | **Failed** — smoothed away fluctuation signal; replaced with last-timestep extraction |
-| 3 | Absolute-level target (R²=0.94) | **Misleading** — naive baseline scored R²=0.92 on same target; motivated delta reformulation |
-| 4 | Cyclical hour-of-day features | **Failed** — R² 0.56→0.44; redundant with existing solar-derived day/night signal |
-| 5 | Hourly → 15-minute resolution switch | **Success** — R² 0.32→0.52, PID reduction 59%→70% |
-| 6 | Weather data (Open-Meteo, hourly) as features | **Failed** — R² 0.52→0.43–0.46; hourly-to-15min forward-fill added redundant, non-informative dimensions |
+| 1 | Global min/max scaler fit on entire dataset | **Bug**: caused data leakage; fixed to fit on train split only |
+| 2 | Global Average Pooling before FC layers | **Failed**: smoothed away fluctuation signal; replaced with last-timestep extraction |
+| 3 | Absolute-level target (R²=0.94) | **Misleading**: naive baseline scored R²=0.92 on same target; motivated delta reformulation |
+| 4 | Cyclical hour-of-day features | **Failed**: R² 0.56→0.44; redundant with existing solar-derived day/night signal |
+| 5 | Hourly → 15-minute resolution switch | **Success**: R² 0.32→0.52, PID reduction 59%→70% |
+| 6 | Weather data (Open-Meteo, hourly) as features | **Failed**: R² 0.52→0.43–0.46; hourly-to-15min forward-fill added redundant, non-informative dimensions |
 | 7 | Hyperparameter sweep (window, channels, LR, dropout) | Converged on window=48, channels=(64,128,128), lr=5e-4, dropout=0.2 |
-| 8 | Custom PID-weighted loss function | **Failed** — R² improved but PID reduction decreased; reverted to standard MSE |
-| 9 | Data augmentation (jitter noise) | **Failed** — degraded performance across all metrics; noise blurred sharp fluctuation patterns |
-| 10 | Brownian Bridge synthetic per-minute training | **Failed** — degraded performance vs. 15-minute data; retained for visualization only |
+| 8 | Custom PID-weighted loss function | **Failed**: R² improved but PID reduction decreased; reverted to standard MSE |
+| 9 | Data augmentation (jitter noise) | **Failed**: degraded performance across all metrics; noise blurred sharp fluctuation patterns |
+| 10 | Brownian Bridge synthetic per-minute training | **Failed**: degraded performance vs. 15-minute data; retained for visualization only |
 | 11 | Architecture comparison (5 models) + ensemble | TCN selected; ensemble tried and rejected |
 
 ---
 
 ## Known Limitations
 
-1. **Proxy dataset, not real sensor data** — no physical prototype exists; two of five channel mappings (geothermal, wave) substitute physically dissimilar sources due to unavailability in France's generation mix.
+1. **Proxy dataset, not real sensor data**: no physical prototype exists; two of five channel mappings (geothermal, wave) substitute physically dissimilar sources due to unavailability in France's generation mix.
 2. **15-minute resolution is coarser than real flywheel-relevant fluctuation timescales** (sub-second to sub-minute). The Brownian Bridge experiment attempted to probe this and showed no benefit from synthetic upsampling alone.
-3. **No exogenous physical driver data (weather) in the final model** — the available hourly weather data, resolution-mismatched to the 15-minute target, degraded rather than improved performance.
-4. **R²=0.51 on delta means ~49% of fluctuation variance is unexplained** — reported transparently alongside the higher but less meaningful level-reconstruction R².
+3. **No exogenous physical driver data (weather) in the final model**: the available hourly weather data, resolution-mismatched to the 15-minute target, degraded rather than improved performance.
+4. **R²=0.51 on delta means ~49% of fluctuation variance is unexplained**: reported transparently alongside the higher but less meaningful level-reconstruction R².
 5. **PID gains are illustrative**, not system-identified from real hardware.
-6. **Directional recall on rising fluctuations (0.81) is lower than falling (0.89)** — sudden upward ramps are structurally harder to anticipate from generation history alone.
+6. **Directional recall on rising fluctuations (0.81) is lower than falling (0.89)**: sudden upward ramps are structurally harder to anticipate from generation history alone.
 7. **Dataset covers only ~6.5 months** (Jan–Jul 2026), missing autumn/winter seasonal patterns.
 8. **Ensemble methods and custom loss functions were tried and underperformed** the simpler TCN + MSE baseline, suggesting the current approach may be near a local optimum without new information sources.
 
