@@ -28,7 +28,7 @@ class TCNBlock(nn.Module):
         return self.relu_out(out + res)
 
 class HESS_TCN_v2(nn.Module):
-    def __init__(self, num_inputs=5, channels=(64, 128, 128),
+    def __init__(self, num_inputs=5, channels=(16, 32, 32),
                  kernel_size=3, dropout=0.2):
         super().__init__()
         layers = []; ic = num_inputs

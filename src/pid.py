@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from show import build_results
 from config import USE_SYNTHETIC
 from pathlib import Path
+from pandas import pd
 
 BASE_DIR = Path(__file__).resolve().parent
 DATA_DIR = BASE_DIR.parent / "data"
@@ -16,14 +17,14 @@ level_actual_next = results["level_actual_next"]
 level_pred_recon = results["level_pred_recon"]
 
 # 1. SETPOINT: target stabil = rolling average dari beban aktual
-#    (merepresentasikan baseline daya aman yang ingin dijaga konstan ke BESS)
+# (baseline daya aman yang ingin dijaga konstan ke BESS)
 if USE_SYNTHETIC:
     WINDOW = 1440
 else:
     WINDOW = 96
-setpoint = np.convolve(level_actual_next, np.ones(WINDOW) / WINDOW, mode="same")
+setpoint = pd.Series(level_actual_next).rolling(WINDOW, min_periods=1).mean().values
 
-# 2. KONSTANTA PID (ILUSTRATIF - akan dikalibrasi ulang saat implementasi hardware)
+# 2. KONSTANTA PID (ILUSTRATIF dan akan dikalibrasi ulang saat implementasi hardware)
 Kp, Ki, Kd = 0.7, 0.05, 0.1
 INTEGRAL_CLAMP = 500  # anti-windup, supaya komponen integral tidak meledak
 

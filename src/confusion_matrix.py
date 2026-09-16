@@ -38,7 +38,7 @@ delta_pred   = denorm(preds_norm,  target_min, target_max)
 
 # KONVERSI KE KLASIFIKASI ARAH
 # 1 = naik (delta > 0), 0 = turun (delta <= 0)
-# Filter: buang kasus delta sangat kecil (< 50 MW) — terlalu noise untuk dinilai arahnya
+# Filter: buang kasus delta sangat kecil (< 50 MW), terlalu noise untuk dinilai arahnya
 THRESHOLD = 50  # MW
 mask = np.abs(delta_actual) > THRESHOLD
 

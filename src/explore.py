@@ -62,9 +62,22 @@ df = df[~all_zero].copy().reset_index(drop=True)
 print(f"[OK] Setelah buang zero: {len(df)} baris (per-15-menit)")
 
 # SYNTHETIC PER-MINUTE (BROWNIAN BRIDGE)
-def generate_synthetic_per_minute(df_15min, feature_cols, sigma_scale=0.3, seed=42):
+def generate_synthetic_per_minute(df_15min, feature_cols, seed=42):
+    """
+    Versi UNBIASED — noise dihitung sekali secara GLOBAL per kolom,
+    bukan per-pasangan-titik. Random walk berjalan BEBAS dulu, koreksi
+    ke titik akhir baru ditempel di akhir sebagai linspace kecil,
+    supaya arah menit-per-menit TIDAK otomatis "tahu" ke mana harus
+    berakhir (mengurangi bias directional accuracy yang gratis).
+    """
     np.random.seed(seed)
     STEPS = 15
+
+    # Hitung SATU sigma global per kolom — TIDAK bergantung pasangan titik
+    global_sigma = {}
+    for col in feature_cols:
+        col_std_15min = df_15min[col].diff().dropna().std()
+        global_sigma[col] = col_std_15min / np.sqrt(STEPS)
 
     rows = []
     for i in range(len(df_15min) - 1):
@@ -74,16 +87,16 @@ def generate_synthetic_per_minute(df_15min, feature_cols, sigma_scale=0.3, seed=
         for col in feature_cols:
             v_start = t_start[col]
             v_end = t_end[col]
-            delta = v_end - v_start
-            col_std = df_15min[col].diff().dropna().std()
-            sigma = col_std * sigma_scale / np.sqrt(STEPS)
-            random_increments = np.random.normal(0, sigma, STEPS)
-            adjustment = (delta - random_increments.sum()) / STEPS
-            adjusted_increments = random_increments + adjustment
-            values = [v_start]
-            for inc in adjusted_increments[:-1]:
-                values.append(max(0, values[-1] + inc))
-            row_minute[col] = values
+            sigma = global_sigma[col]
+
+            random_steps = np.random.normal(0, sigma, STEPS)
+            free_walk = v_start + np.cumsum(random_steps)
+
+            correction = np.linspace(0, v_end - free_walk[-1], STEPS)
+            values = free_walk + correction
+            values = np.clip(values, 0, None)
+
+            row_minute[col] = values.tolist()
         rows.append(row_minute)
 
     minute_data = {col: [] for col in feature_cols}
@@ -102,7 +115,7 @@ def generate_synthetic_per_minute(df_15min, feature_cols, sigma_scale=0.3, seed=
 df_clean = df.copy()
 
 if USE_SYNTHETIC:
-    df_work = generate_synthetic_per_minute(df_clean, FEATURE_COLS, sigma_scale=0.3)
+    df_work = generate_synthetic_per_minute(df_clean, FEATURE_COLS)
     print(f"[OK] Synthetic per-menit: {len(df_work)} baris")
 
     fig, ax = plt.subplots(figsize=(14, 4))

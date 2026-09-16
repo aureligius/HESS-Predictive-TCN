@@ -41,9 +41,14 @@ def build_results(plot=True):
     delta_actual = denorm(y_test, target_min, target_max)
     delta_pred = denorm(preds_norm, target_min, target_max)
 
-    # 4. METRIK PADA DELTA -> ini ukuran SKILL ASLI model menangkap fluktuasi
     r2_delta = r2_score(delta_actual, delta_pred)
     mae_delta = mean_absolute_error(delta_actual, delta_pred)
+
+    # MASE (Mean Absolute Scaled Error) — Hyndman & Koehler (2006)
+    # Membandingkan error model terhadap error baseline naif secara formal
+    delta_actual_flat = delta_actual.flatten()
+    mae_naive = mean_absolute_error(delta_actual_flat[1:], delta_actual_flat[:-1])
+    mase_delta = mae_delta / mae_naive
 
     # 5. REKONSTRUKSI KE LEVEL (MW) -> ini yang dipakai untuk grafik "Beban Aktual vs Prediksi"
     level_actual_next = y_test_level_last + delta_actual.flatten()
@@ -59,6 +64,7 @@ def build_results(plot=True):
     print("=" * 55)
     print(f"  R2 pada DELTA (skill asli AI)         : {r2_delta:.4f}")
     print(f"  MAE pada DELTA                         : {mae_delta:.2f} MW")
+    print(f"  MASE pada DELTA (vs naive baseline)    : {mase_delta:.4f}")
     print()
     print(f"  R2 pada LEVEL (hasil rekonstruksi)      : {r2_level:.4f}")
     print(f"  MAE pada LEVEL (hasil rekonstruksi)     : {mae_level:.2f} MW")
