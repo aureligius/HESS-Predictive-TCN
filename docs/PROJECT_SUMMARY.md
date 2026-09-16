@@ -23,10 +23,10 @@ The project has no physical prototype yet, so no real sensor data exists for the
 
 This was **not** the first dataset used. Two prior datasets were tried and abandoned:
 
-1. **A generic hourly "sumber_energi.csv" Kaggle-style dataset** (French national grid data, hourly resolution, ~62,780 rows spanning multiple years) was the original dataset. Columns: Wind, Biomass, Nuclear, Solar, Hydroelectric — mapped respectively to wind, thermal, geothermal, hydrogen, wave. This mapping was known to be physically weak (Nuclear standing in for Geothermal; Hydroelectric standing in for Wave) but was accepted as a first-pass proxy since no better public alternative was known at the time.
-2. Weather-only datasets (Open-Meteo, ERA5) were later tried as **additional features**, not as a replacement — see Trial 6 below.
+1. **A generic hourly "sumber_energi.csv" Kaggle-style dataset** (French national grid data, hourly resolution, ~62,780 rows spanning multiple years) was the original dataset. Columns: Wind, Biomass, Nuclear, Solar, Hydroelectric mapped to wind, thermal, geothermal, hydrogen, wave. This mapping was known to be physically weak (Nuclear standing in for Geothermal; Hydroelectric standing in for Wave) but was accepted as a first-pass proxy since no better public alternative was known at the time.
+2. Weather-only datasets (Open-Meteo, ERA5) were later tried as **additional features** (mentioned further in Trial 6 below).
 
-The move to ENTSO-E 15-minute data was driven by the realization that hourly-resolution data cannot represent the sub-hour volatility that actually matters for a flywheel-based smoothing system — see Trial 5 below.
+The move to ENTSO-E 15-minute data was driven by the realization that hourly-resolution data cannot represent the sub-hour volatility that actually matters for a flywheel-based smoothing system (mentioned further in Trial 5 below).
 
 ### 2.2 How the dataset maps to model features
 
@@ -35,34 +35,34 @@ Five columns are constructed from ENTSO-E's 21 raw production-type categories:
 | HESS Channel | ENTSO-E Source Column(s) | Physical Justification |
 |---|---|---|
 | `wind` | Wind Onshore + Wind Offshore | Same physical phenomenon (turbines), summed directly |
-| `thermal` | Biomass | Dispatchable, stable baseload — matches thermal's role |
+| `thermal` | Biomass | Dispatchable, stable baseload, matches thermal's role |
 | `geothermal` | Hydro Run-of-river and Pondage | France has no geothermal generation; run-of-river hydro is the most stable, baseload-like proxy available |
 | `hydrogen` | Solar | France has no fuel-cell generation category; Solar's high intermittency (sunrise/sunset/cloud transients) behaviorally resembles a hydrogen fuel cell drawing on volatile electrolysis surplus |
 | `wave` | Hydro Water Reservoir | France has no marine/wave generation; reservoir hydro is the most variable/dispatch-driven proxy available, resembling wave energy's irregular output |
 
-**Known weakness (acknowledged, not hidden):** two of the five mappings (geothermal→run-of-river, wave→reservoir) are proxies for source types France does not generate at reportable scale. This is disclosed explicitly in the proposal as a limitation of the proof-of-concept, not presented as if it were real geothermal/wave data.
+**Known weakness:** two of the five mappings (geothermal→run-of-river, wave→reservoir) are proxies for source types France does not generate at reportable scale. This is disclosed explicitly in the proposal as a limitation of the proof-of-concept, not presented as if it were real geothermal/wave data.
 
 ### 2.3 Cleaning steps and what they removed
 
 - Raw ENTSO-E export: 35,036 rows in "long" format (one row per timestamp × production type).
 - Pivoted to "wide" format (one row per timestamp, columns = production types).
 - "n/e" (not estimated) string values converted to numeric zero, then forward-filled to propagate the last known reading.
-- Rows where **all five mapped feature columns were simultaneously zero** were dropped: 16,067 rows removed (45.9% of the dataset). Root cause: France's TSO (RTE) reports many production types at hourly — not 15-minute — granularity to ENTSO-E, so 3 of every 4 fifteen-minute slots are natively empty and can only be partially recovered by forward-fill; combined with a 1-hour Daylight Saving Time gap on 29 March 2026.
+- Rows where **all five mapped feature columns were simultaneously zero** were dropped: 16,067 rows removed (45.9% of the dataset). Root cause: France's TSO (RTE) reports many production types at hourly, not 15-minute, granularity to ENTSO-E, so 3 of every 4 fifteen-minute slots are natively empty and can only be partially recovered by forward-fill; combined with a 1-hour Daylight Saving Time gap on 29 March 2026.
 - Final clean dataset: **18,969 rows**, spanning two continuous segments (2 Jan–29 Mar, and 29 Mar–18 Jul 2026) separated by the DST gap.
 
 ### 2.4 Target construction: delta, not absolute level
 
-The model predicts **Δ(t) = Σsources(t+1) − Σsources(t)**, not the absolute summed load. This is a deliberate and important design decision (see Trial 3 below for how it was discovered as necessary).
+The model predicts **Δ(t) = Σsources(t+1) − Σsources(t)**, not the absolute summed load. This is an design decision (see Trial 3 below for how it was discovered as necessary).
 
 Rationale: the absolute load level is strongly autocorrelated (lag-1 autocorrelation > 0.95). A naive "tomorrow = today" baseline achieves R² ≈ 0.92–0.97 on the absolute level with zero learned model. This makes absolute-level R² an unreliable/misleading metric of model skill. The delta target isolates the genuinely hard-to-predict component (the change), where a naive baseline scores R² ≈ 0.
 
 Two metrics are reported throughout: **R² on delta** (true skill) and **R² on reconstructed level** (delta prediction added back to the known current level — useful for visualization, inflated by the autocorrelation "free credit").
 
-### 2.5 Synthetic per-minute data (Brownian Bridge) — tried, not used for training
+### 2.5 Synthetic per-minute data (Brownian Bridge), not used for training
 
 To argue that the system design generalizes to sub-15-minute deployment scenarios, a Brownian Bridge interpolation was implemented: for each pair of consecutive 15-minute points, 14 synthetic intermediate 1-minute values were generated via a constrained random walk (starts at v_t, ends at v_{t+1}, fluctuates in between with noise calibrated from the empirical per-channel delta standard deviation).
 
-**Result: training on this synthetic per-minute data degraded model performance relative to the 15-minute data.** This is presented in the write-up as a limitation, not a success — the synthetic data was retained only as an illustrative visualization ("this is the kind of fluctuation a real per-minute sensor would show"), not as training data. The final trained model uses the 15-minute ENTSO-E data only.
+**Result: training on this synthetic per-minute data degraded model performance relative to the 15-minute data.** This is presented in the write-up as a limitation, the synthetic data was retained only as an illustrative visualization ("this is the kind of fluctuation a real per-minute sensor would show"), not as training data. The final trained model uses the 15-minute ENTSO-E data only.
 
 ---
 
@@ -77,7 +77,7 @@ A Temporal Convolutional Network (TCN) with three stacked residual blocks:
 - Block 2: 2× causal dilated Conv1D (dilation=2), 64→128 channels, residual shortcut (1×1 conv)
 - Block 3: 2× causal dilated Conv1D (dilation=4), 128→128 channels, residual shortcut (identity, channels unchanged)
 - Each conv followed by ReLU + Dropout (rate 0.2)
-- Last-timestep extraction (not pooling/flattening) — receptive field of 29 timesteps at kernel_size=3, close to the full 48-step window
+- Last-timestep extraction (not pooling/flattening), receptive field of 29 timesteps at kernel_size=3, close to the full 48-step window
 - Fully connected: 128→64 (ReLU, Dropout) → 64→1 (scalar delta prediction)
 - Approx. 1.2M parameters
 - Optimizer: Adam, lr=5e-4, weight_decay=1e-5, ReduceLROnPlateau scheduler
@@ -129,7 +129,7 @@ This section documents every major iteration, in order, including failures and r
 
 **Trial 2 — Global Average Pooling instead of last-timestep extraction.** An early architecture applied global average pooling across the time dimension before the fully connected layers. This smoothed away exactly the fluctuation signal the model needed to learn, producing visibly over-smoothed predictions that missed peaks. Replaced with extracting only the final timestep's representation (justified by the TCN's receptive field already covering nearly the full window via dilation).
 
-**Trial 3 — Absolute-level target produced misleadingly high R² (~0.94).** Before the delta reformulation, the target was the raw summed load level. R²=0.94 looked excellent, but comparison against a naive persistence baseline (predict "no change") revealed the baseline alone scored R²=0.92 on the same target — meaning the model was barely outperforming a trivial heuristic. This motivated the delta-target reformulation (Section 2.4), after which the naive baseline score on the new target (delta) dropped to ≈0, correctly reflecting that predicting fluctuations is genuinely hard.
+**Trial 3 — Absolute-level target produced misleadingly high R² (~0.94).** Before the delta reformulation, the target was the raw summed load level. R²=0.94 looked excellent, but comparison against a naive persistence baseline (predict "no change") revealed the baseline alone scored R²=0.92 on the same target, meaning the model was barely outperforming a trivial heuristic. This motivated the delta-target reformulation (Section 2.4), after which the naive baseline score on the new target (delta) dropped to ≈0, correctly reflecting that predicting fluctuations is genuinely hard.
 
 **Trial 4 — Feature engineering: cyclical hour-of-day encoding.** Added sin/cos hour features hypothesizing they would help capture daily demand cycles. Result: R² decreased (0.56 → 0.44 in that experiment) because the `hydrogen` (Solar) feature already implicitly encodes day/night cycles, making the added feature redundant noise for a small-capacity model. Reverted.
 

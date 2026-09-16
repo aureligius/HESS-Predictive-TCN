@@ -2,8 +2,6 @@
 
 AI-driven predictive control system for a Hybrid Energy Storage System (HESS) prototype, combining a Temporal Convolutional Network (TCN) for short-horizon renewable power forecasting with a Predictive PID controller for flywheel-based fluctuation smoothing.
 
-Built for **DELTACUP**.
-
 ---
 
 ## Table of Contents
@@ -31,7 +29,7 @@ Built for **DELTACUP**.
 
 A Hybrid Energy Storage System (HESS) combines five renewable energy sources (Wind, Thermal, Geothermal, Hydrogen, Wave) with a flywheel as a mechanical buffer and a Battery Energy Storage System (BESS) as final storage. Renewable sources fluctuate unpredictably; feeding raw fluctuating power directly into a battery accelerates degradation.
 
-A Power Measurement Unit (PMU) can only report the **current** state of the system — it cannot anticipate what happens next. This project adds an AI forecasting layer that predicts near-future power fluctuations, allowing a **Predictive PID controller** to command the flywheel proactively (before a fluctuation is measured) instead of reactively (after it hits).
+A Power Measurement Unit (PMU) can only report the **current** state of the system, it cannot anticipate what happens next. This project adds an AI forecasting layer that predicts near-future power fluctuations, allowing a **Predictive PID controller** to command the flywheel proactively (before a fluctuation is measured) instead of reactively (after it hits).
 
 ```
 PMU (5 sensors) → Sum → Delta Transform → TCN Model → Predicted Delta
@@ -103,10 +101,9 @@ DELTACUP/
 │       └── fig_loss_curve.png
 │
 ├── docs/
-│   ├── PROJECT_SUMMARY.md          # Full methodology + trial-and-error log for review
-│   └── CODE_EXPLAINED.pdf          # Line-by-line code walkthrough
+│   └── PROJECT_SUMMARY.md          # Full methodology + trial-and-error log for review
+│  
 │
-├── requirements.txt
 ├── .gitignore
 └── README.md
 ```
@@ -327,10 +324,6 @@ A condensed summary — full details in [`docs/PROJECT_SUMMARY.md`](docs/PROJECT
 - Edge Impulse. [https://edgeimpulse.com](https://edgeimpulse.com)
 
 ---
-
-## License
-
-*(Add your license here, e.g., MIT, or leave as competition-internal if not intended for public reuse.)*
 
 ## Acknowledgments
 
